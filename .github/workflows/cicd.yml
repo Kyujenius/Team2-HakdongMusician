@@ -1,0 +1,97 @@
+name: Build and Upload to S3
+
+on:
+  push:
+    branches: [ "develop2" ]
+  workflow_dispatch: {}   # 수동 실행 지원
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET: ${{ secrets.S3_BUCKET }}    # S3 버킷명을 Secrets에 설정
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    
+    # daycan-back 디렉토리에서 작업
+    defaults:
+      run:
+        working-directory: daycan-back
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Amazon Corretto 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: |
+          echo "🔨 Building Spring Boot application..."
+          ./gradlew clean build -x test
+          echo "✅ Build completed successfully!"
+
+      - name: Check build artifacts
+        run: |
+          echo "📦 Checking build artifacts..."
+          ls -la api/build/libs/
+          JAR_FILE=$(ls -t api/build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ No JAR file found!"
+            exit 1
+          fi
+          echo "✅ Found JAR file: $JAR_FILE"
+          JAR_SIZE=$(du -h "$JAR_FILE" | cut -f1)
+          echo "📏 JAR file size: $JAR_SIZE"
+
+      - name: Prepare upload bundle
+        run: |
+          echo "📋 Preparing upload bundle..."
+          # 타임스탬프와 커밋 해시로 고유한 파일명 생성
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          COMMIT_HASH=${GITHUB_SHA::7}
+          JAR_FILE=$(ls -t api/build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
+          
+          # 새로운 파일명으로 복사
+          NEW_JAR_NAME="daycan-api-${TIMESTAMP}-${COMMIT_HASH}.jar"
+          cp "$JAR_FILE" "$NEW_JAR_NAME"
+          
+          echo "UPLOAD_FILE=$NEW_JAR_NAME" >> $GITHUB_ENV
+          echo "S3_KEY=deploy/daycan-back/$NEW_JAR_NAME" >> $GITHUB_ENV
+          echo "✅ Upload bundle prepared: $NEW_JAR_NAME"
+
+      # 테스트용: Access Key 방식 (운영환경에서는 OIDC 권장)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          echo "📤 Uploading to S3..."
+          aws s3 cp "$UPLOAD_FILE" "s3://${S3_BUCKET}/${S3_KEY}"
+          echo "✅ Successfully uploaded to: s3://${S3_BUCKET}/${S3_KEY}"
+          
+          # 업로드 확인
+          aws s3 ls "s3://${S3_BUCKET}/${S3_KEY}" --human-readable
+          
+      - name: Upload summary
+        run: |
+          echo "🎉 Build and Upload Summary:"
+          echo "- JAR file: $UPLOAD_FILE"
+          echo "- S3 location: s3://${S3_BUCKET}/${S3_KEY}"
+          echo "- Build time: $(date)"
+          echo "- Commit: ${GITHUB_SHA}"
+

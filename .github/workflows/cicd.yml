@@ -45,14 +45,14 @@ jobs:
       - name: Build with Gradle
         run: |
           echo "🔨 Building Spring Boot application (api module)..."
-          ./gradlew clean :api:build -x test
+          ./gradlew clean build
           echo "✅ Build completed successfully!"
 
       - name: Check build artifacts
         run: |
           echo "📦 Checking build artifacts..."
-          ls -la api/build/libs/
-          JAR_FILE=$(ls -t api/build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
+          ls -la build/libs/
+          JAR_FILE=$(ls -t build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
           if [ -z "$JAR_FILE" ]; then
             echo "❌ No JAR file found!"
             exit 1
@@ -67,7 +67,7 @@ jobs:
           # 타임스탬프와 커밋 해시로 고유한 파일명 생성
           TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
           COMMIT_HASH=${GITHUB_SHA::7}
-          JAR_FILE=$(ls -t api/build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
+          JAR_FILE=$(ls -t build/libs/*.jar | grep -v 'plain.jar' | head -n 1)
           
           # 새로운 파일명으로 복사
           NEW_JAR_NAME="daycan-api-${TIMESTAMP}-${COMMIT_HASH}.jar"

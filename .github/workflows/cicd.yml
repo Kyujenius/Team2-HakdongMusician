@@ -19,7 +19,7 @@ jobs:
     # daycan-back 디렉토리에서 작업 (루트 Gradle 프로젝트)
     defaults:
       run:
-        working-directory: daycan-back
+        working-directory: daycan-back/api
 
     steps:
       - name: Checkout code

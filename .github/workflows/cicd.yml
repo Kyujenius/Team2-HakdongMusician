@@ -16,10 +16,10 @@ jobs:
   build-and-upload:
     runs-on: ubuntu-latest
     
-    # daycan-back 디렉토리에서 작업
+    # daycan-back 디렉토리에서 작업 (루트 Gradle 프로젝트)
     defaults:
       run:
-        working-directory: daycan-back/api
+        working-directory: daycan-back
 
     steps:
       - name: Checkout code
@@ -44,8 +44,8 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          echo "🔨 Building Spring Boot application..."
-          ./gradlew clean build -x test
+          echo "🔨 Building Spring Boot application (api module)..."
+          ./gradlew clean :api:build -x test
           echo "✅ Build completed successfully!"
 
       - name: Check build artifacts

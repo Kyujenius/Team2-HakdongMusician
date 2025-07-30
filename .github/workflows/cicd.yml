@@ -32,6 +32,15 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+
+      - name: Debug directory structure
+        run: |
+          echo "📍 Current directory: $(pwd)"
+          echo "📁 Directory contents:"
+          ls -la
+          echo "🔍 Looking for gradlew files:"
+          find . -name "gradlew" -type f
+
       - name: Move to daycan-back directory
         run: |
           cd daycan-back

@@ -129,39 +129,6 @@ jobs:
           echo "deployment_id=$DEPLOYMENT_ID_RESULT" >> $GITHUB_OUTPUT
           echo "✅ CodeDeploy deployment created: $DEPLOYMENT_ID_RESULT"
 
-      - name: Wait for deployment to complete
-        run: |
-          set -e
-          CODEDEPLOY_ID="${CODEDEPLOY_ID:?missing}"
-          echo "⏳ Waiting for CodeDeploy deployment: $CODEDEPLOY_ID"
-          
-          # 최대 20분 대기 (120 * 10s)
-          for i in $(seq 1 120); do
-            STATUS=$(aws deploy get-deployment --deployment-id "$CODEDEPLOY_ID" \
-              --query "deploymentInfo.status" --output text)
-            echo "[$i/120] Deployment Status: $STATUS"
-            
-            case "$STATUS" in
-              Succeeded)
-                echo "🎉 Deployment completed successfully!"
-                exit 0
-                ;;
-              Failed|Stopped)
-                echo "❌ Deployment $STATUS"
-                echo "📋 Deployment details:"
-                aws deploy get-deployment --deployment-id "$CODEDEPLOY_ID" \
-                  --query "deploymentInfo.errorInformation" --output table || true
-                exit 1
-                ;;
-              *)
-                sleep 10
-                ;;
-            esac
-          done
-          
-          echo "⏰ Timeout waiting for deployment to complete"
-          exit 1
-
       - name: Deployment summary
         if: always()
         run: |

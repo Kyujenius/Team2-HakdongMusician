@@ -5,7 +5,7 @@ set -euo pipefail
 chown -R daycan:daycan /opt/daycan
 chmod -R 755 /opt/daycan/scripts
 
-cp /opt
+cp /opt/daycan/daycan.env /etc/daycan/daycan.env
 chmod 640 /etc/daycan/daycan.env
 chown root:daycan /etc/daycan/daycan.env
 

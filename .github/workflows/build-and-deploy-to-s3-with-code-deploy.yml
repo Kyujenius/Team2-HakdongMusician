@@ -52,6 +52,14 @@ jobs:
           echo "🔨 Building Spring Boot application (api module)..."
           ./gradlew clean bootJar
           echo "✅ Build completed successfully!"
+      
+      - name: Make daycan.env file
+        run: |
+          echo "🔨 Making daycan.env file..."
+          echo "DB_URL=${{ secrets.DB_URL }}" >> daycan.env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> daycan.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> daycan.env
+          echo "✅ daycan.env file created successfully!"
 
       - name: Prepare CodeDeploy bundle
         run: |
@@ -72,6 +80,7 @@ jobs:
           # appspec.yml과 scripts 복사 (상위 디렉토리에서)
           cp ../appspec.yml deployment-bundle/
           cp -r ../scripts/* deployment-bundle/scripts/
+          cp daycan.env deployment-bundle/app/daycan.env
           echo "✅ Copied appspec.yml and scripts"
           
           # 스크립트에 실행 권한 부여
